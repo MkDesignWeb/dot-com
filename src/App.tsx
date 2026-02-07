@@ -6,8 +6,12 @@ function App() {
 
   return (
     <>
-    <TopBar />
-    <MainRoute />
+      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column"}}>
+        <TopBar />
+        <div style={{ flex: 1 }}>
+          <MainRoute />
+        </div>
+      </div>
     </>
   )
 }

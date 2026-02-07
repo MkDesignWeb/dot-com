@@ -6,7 +6,7 @@
     justify-content: space-between;
     height: 36px;
     background: $bg-color-2;
-    color: #f1f5f9;
+    color: $text-color;
     padding: 0 0 0 12px;
     user-select: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -21,7 +21,7 @@
     font-weight: 600;
     font-size: 14px;
     letter-spacing: 0.5px;
-    color: #f1f5f9;
+    color: $secudary;
 }
 
 .topbar-actions {
@@ -36,7 +36,7 @@
     width: 46px;
     height: 100%;
     background: transparent;
-    color: #f1f5f9;
+    color: $secudary;;
     border: none;
     cursor: pointer;
     display: flex;

@@ -1,0 +1,70 @@
+@use "../../styles/variables" as *;
+
+main {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+}
+
+.time-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    &__hora {
+        font-size: 6rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.05em;
+        color: #1a1a1a;
+    }
+
+    &__data {
+        font-size: 1.125rem;
+        font-weight: 500;
+        color: #5a5a5a;
+        text-transform: capitalize;
+    }
+}
+
+.time-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 15rem;
+    height: 15rem;
+    padding: 1rem;
+    border: none;
+    border-radius: 50%;
+    background-color: $primary;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+    &:hover {
+        transform: scale(1.02);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    &:active {
+        transform: scale(0.98);
+    }
+
+    &__icon {
+        width: 4rem;
+        height: 4rem;
+    }
+
+    &__label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        font-family: inherit;
+    }
+}

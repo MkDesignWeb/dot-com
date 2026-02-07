@@ -1,0 +1,27 @@
+@use "../../../../styles/variables" as *;
+
+.card-user-content {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    padding: 1rem;
+    gap: 1rem;
+    background-color: $bg-color-2;
+    font-size: 1.2rem;
+    border-radius: 0.5rem;
+    max-width: 600px;
+
+     button {
+        color: white 
+     }
+}
+
+.text-content {
+   display: flex;
+   flex-direction: column;
+   align-items: start;
+   
+   span {
+      font-size: 1rem;
+   }
+}

@@ -1,0 +1,39 @@
+@use "../../styles/variables" as *;
+
+.point-register-container {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(180deg, $bg-color 0%, $bg-color-2 100%);
+}
+
+.point-register-content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    padding-top: 2rem;
+    gap: 1rem
+    ;
+}
+
+.card-content {
+	display: grid;
+	grid-template-columns: 300px auto auto;
+	grid-gap: 10px;
+    gap: 1rem;
+    width: 100%;
+    justify-content: center;
+}
+
+.point-register__back {
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    color: $secudary;
+    text-decoration: none;
+    font-weight: 500;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import "./styles.scss"
+import { Link } from "react-router-dom"
 
 const formatarData = (d: Date) =>
     d.toLocaleDateString("pt-BR", {
@@ -18,7 +19,7 @@ export const TimePage = () => {
     }, [])
 
     return (
-        <main>
+        <main className="time-page-container">
             <div className="time-display">
                 <span className="time-display__hora">
                     {agora.toLocaleTimeString("pt-BR", {
@@ -29,7 +30,7 @@ export const TimePage = () => {
                 </span>
                 <span className="time-display__data">{formatarData(agora)}</span>
             </div>
-            <button type="button" className="time-action-btn">
+            <Link to="pointRegister" type="button" className="time-action-btn">
                 <svg
                     className="time-action-btn__icon"
                     viewBox="0 0 24 24"
@@ -43,7 +44,7 @@ export const TimePage = () => {
                     <path d="M12 6v6l4 2" />
                 </svg>
                 <span className="time-action-btn__label">PONTO</span>
-            </button>
+            </Link>
         </main>
     )
 }

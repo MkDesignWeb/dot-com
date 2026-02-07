@@ -1,4 +1,4 @@
-import { app, ipcMain } from "electron";
+import { app, ipcMain, session } from "electron";
 import { BrowserWindow } from "electron";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -21,7 +21,18 @@ function createWindow() {
   const preloadPath = getPreloadPath();
   console.log("Caminho do preload:", preloadPath);
   console.log("Arquivo existe?", existsSync(preloadPath));
-  
+
+  // Permite câmera e microfone para getUserMedia (reconhecimento facial)
+  session.defaultSession.setPermissionRequestHandler(
+    (_webContents, permission, callback) => {
+      if (permission === "media") {
+        callback(true);
+      } else {
+        callback(false);
+      }
+    }
+  );
+
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,

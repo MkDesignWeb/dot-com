@@ -1,6 +1,6 @@
 @use "../../styles/variables" as *;
 
-main {
+.time-page-container {
     display: flex;
     flex-direction: column;
     gap: 2rem;
@@ -47,6 +47,7 @@ main {
     cursor: pointer;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     transition: transform 0.15s ease, box-shadow 0.15s ease;
+    text-decoration: none;
 
     &:hover {
         transform: scale(1.02);

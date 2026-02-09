@@ -1,12 +1,12 @@
 @use "../../styles/variables" as *;
 
-.custom-topbar {
+.customTopbar {
     position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
     height: 36px;
-    background: $bg-color-2;
+    background: $primary;
     color: $text-color;
     padding: 0 0 0 12px;
     user-select: none;
@@ -14,7 +14,7 @@
     z-index: 100;
 }
 
-.topbar-logo {
+.topbarLogo {
     -webkit-app-region: drag;
     flex: 1;
     height: 100%;
@@ -26,14 +26,14 @@
     color: $secudary;
 }
 
-.topbar-actions {
+.topbarActions {
     display: flex;
     align-items: center;
     height: 100%;
     flex-shrink: 0;
 }
 
-.topbar-button {
+.topbarButton {
     -webkit-app-region: no-drag;
     width: 46px;
     height: 100%;
@@ -62,19 +62,19 @@
     }
 }
 
-.topbar-button-minimize {
+.topbarButtonMinimize {
     &:hover {
         background-color: rgba(255, 255, 255, 0.1);
     }
 }
 
-.topbar-button-maximize {
+.topbarButtonMaximize {
     &:hover {
         background-color: rgba(255, 255, 255, 0.1);
     }
 }
 
-.topbar-button-close {
+.topbarButtonClose {
     &:hover {
         background-color: #e5383b;
         color: #fff;

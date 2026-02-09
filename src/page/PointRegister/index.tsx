@@ -1,19 +1,18 @@
 import { Link } from "react-router-dom";
-import "./styles.scss";
 import { UserCard } from "./componentes/UserCard";
+import style from  "./styles.module.scss";
 
 export const PointRegister = () => {
 
     return (
-        <main className="point-register-container">
-            <div className="point-register-content">
-                <div className="card-content">
+        <main className={style.container}>
+            <div className={style.pointRegisterContent}>
+                <div className={style.cardContent}>
                     <UserCard />
                     <UserCard />
-
                 </div>
 
-                <Link to="/" className="point-register__back">
+                <Link to="/" className={style.pointRegisterBack}>
                     Voltar
                 </Link>
             </div>

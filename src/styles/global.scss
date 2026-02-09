@@ -16,6 +16,8 @@ body {
   background: $bg-color;
   height: 100%;
   width: 100%;
+  border-radius: 0.5rem;
+  overflow: hidden;
 }
 
 button {
@@ -31,7 +33,7 @@ button {
   }
 
   button:hover {
-    border-color: #646cff;
+    border-color: #1fb332;
   }
 
   

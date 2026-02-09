@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import "./styles.scss";
+import style from "./styles.module.scss";
 
 export const TopBar = () => {
     const [isMaximized, setIsMaximized] = useState(false);
@@ -79,14 +79,14 @@ export const TopBar = () => {
 
 
     return (
-        <nav className="custom-topbar">
-            <div className="topbar-logo">
+        <nav className={style.customTopbar}>
+            <div className={style.topbarLogo}>
                 DOT COM
             </div>
-            <div className="topbar-actions">
+            <div className={style.topbarActions}>
                 <button
                     type="button"
-                    className="topbar-button topbar-button-minimize"
+                    className={`${style.topbarButton} ${style.topbarButtonMinimize}`}
                     onClick={handleMinimize}
                     title="Minimizar"
                 >
@@ -96,7 +96,7 @@ export const TopBar = () => {
                 </button>
                 <button
                     type="button"
-                    className={`topbar-button topbar-button-maximize ${isMaximized ? "restore" : ""}`}
+                    className={`${style.topbarButton} ${style.topbarButtonMaximize} ${isMaximized ? "restore" : ""}`}
                     onClick={handleMaximize}
                     title={isMaximized ? "Restaurar" : "Maximizar"}
                 >
@@ -113,7 +113,7 @@ export const TopBar = () => {
                 </button>
                 <button
                     type="button"
-                    className="topbar-button topbar-button-close"
+                    className={`${style.topbarButton} ${style.topbarButtonClose}`}
                     onClick={handleClose}
                     title="Fechar"
                 >

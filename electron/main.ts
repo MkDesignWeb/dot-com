@@ -39,6 +39,7 @@ function createWindow() {
     minHeight: 800,
     minWidth: 1200,
     frame: false,
+    transparent: true,
     webPreferences: {
       preload: preloadPath,
       contextIsolation: true,

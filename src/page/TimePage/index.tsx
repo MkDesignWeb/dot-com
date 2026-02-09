@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
-import "./styles.scss"
 import { Link } from "react-router-dom"
+import style from "./styles.module.scss"
 
 const formatarData = (d: Date) =>
     d.toLocaleDateString("pt-BR", {
@@ -9,6 +9,7 @@ const formatarData = (d: Date) =>
         month: "long",
         year: "numeric",
     })
+
 
 export const TimePage = () => {
     const [agora, setAgora] = useState(() => new Date())
@@ -19,20 +20,20 @@ export const TimePage = () => {
     }, [])
 
     return (
-        <main className="time-page-container">
-            <div className="time-display">
-                <span className="time-display__hora">
+        <main className={style.container}>
+            <div className={style.timeCisplay}>
+                <span className={`${style.timeDisplay} ${style.hora}`}>
                     {agora.toLocaleTimeString("pt-BR", {
                         hour: "2-digit",
                         minute: "2-digit",
                         second: "2-digit",
                     })}
                 </span>
-                <span className="time-display__data">{formatarData(agora)}</span>
+                <span className={`${style.timeDisplay} ${style.data}`}>{formatarData(agora)}</span>
             </div>
-            <Link to="pointRegister" type="button" className="time-action-btn">
+            <Link to="pointRegister" type="button" className={style.timeActionBtn}>
                 <svg
-                    className="time-action-btn__icon"
+                    className={style.icon}
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -43,7 +44,7 @@ export const TimePage = () => {
                     <circle cx="12" cy="12" r="10" />
                     <path d="M12 6v6l4 2" />
                 </svg>
-                <span className="time-action-btn__label">PONTO</span>
+                <span className={style.label}>PONTO</span>
             </Link>
         </main>
     )

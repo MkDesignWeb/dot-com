@@ -1,6 +1,6 @@
 @use "../../styles/variables" as *;
 
-.time-page-container {
+.container {
     display: flex;
     flex-direction: column;
     gap: 2rem;
@@ -10,28 +10,29 @@
     align-items: center;
 }
 
-.time-display {
+.timeDisplay {
     display: flex;
     flex-direction: column;
     align-items: center;
-
-    &__hora {
-        font-size: 6rem;
-        font-weight: 700;
-        font-variant-numeric: tabular-nums;
-        letter-spacing: 0.05em;
-        color: #1a1a1a;
-    }
-
-    &__data {
-        font-size: 1.125rem;
-        font-weight: 500;
-        color: #5a5a5a;
-        text-transform: capitalize;
-    }
 }
 
-.time-action-btn {
+.hora {
+    pointer-events: none;
+    font-size: 6rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.05em;
+    color: #1a1a1a;
+}
+
+.data {
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: #5a5a5a;
+    text-transform: capitalize;
+}
+
+.timeActionBtn {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -58,14 +59,15 @@
         transform: scale(0.98);
     }
 
-    &__icon {
-        width: 4rem;
-        height: 4rem;
-    }
+}
 
-    &__label {
-        font-size: 0.875rem;
-        font-weight: 500;
-        font-family: inherit;
-    }
+.icon {
+    width: 4rem;
+    height: 4rem;
+}
+
+.label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    font-family: inherit;
 }

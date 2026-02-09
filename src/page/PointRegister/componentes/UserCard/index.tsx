@@ -1,16 +1,19 @@
-import "./styles.scss"
+import style from "./styles.module.scss"
 
-export const UserCard = () => {
+type UserCardProps = {
+    name: string;
+    company: number;
+    setUser: (user: any) => void
+}
+
+export const UserCard = ({ name, company, setUser }: UserCardProps) => {
 
     return (
-        <div className="card-user-content">
-            <div className="text-content">
-                <strong>Matheus Kauan</strong>
-                <span>Empresa: 1</span>
+        <button className={style.cardUserContent} onClick={() => setUser({name, company})}>
+            <div className={style.textContent}>
+                <strong>{name}</strong>
+                <span>Empresa: {company}</span>
             </div>
-            <button>
-                Ponto
-            </button>
-        </div>
+        </button>
     )
 }

@@ -2,12 +2,21 @@
 
 .modalContainer {
     display: flex;
-    position: absolute;
+    position: fixed;
     z-index: 90;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     justify-content: center;
     align-items: center;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 240ms ease, visibility 240ms ease;
+}
+
+.modalContainer.open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
 }
 
 .bgBlack {
@@ -17,14 +26,85 @@
     background-color: rgba(0, 0, 0, 0.637);
     width: 100%;
     height: 100%;
+    opacity: 0;
+    transition: opacity 240ms ease;
+}
+
+.modalContainer.open .bgBlack {
+    opacity: 1;
 }
 
 .container {
     position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3rem;
+    align-items: center;
+    z-index: 1000;
     width: 80%;
     height: 80%;
     background-color: $bg-color;
-    z-index: 1000;
     border-radius: 1rem;
+    transform: translateY(-10px) scale(0.98);
+    transition: transform 240ms ease, opacity 240ms ease;
+    opacity: 0;
+}
+
+.modalContainer.open .container {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+}
+
+.userContent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    color: $text-color;
+    
+
+    h3 {
+        margin: 0;
+        font-size: 3rem;
+        font-weight: 900;
+    }
+
+    span {
+        font-size: 1.5rem;
+        font-weight: 500;
+    }
+
+}
+
+.passwordContent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+
+    input {
+        padding: 1rem;
+        border-radius: 0.5rem;
+        width: 100%;
+        max-width: 400px;
+        font-size: 1.2rem;
+    }
+
+    button {
+        padding: 1rem 2rem;
+        border-radius: 0.5rem;
+        border: none;
+        background-color: $primary;
+        color: #fff;
+        font-size: 1.2rem;
+        cursor: pointer;
+
+        &:hover {
+            background-color: darken($primary, 10%);
+        }
+    }
 }
 

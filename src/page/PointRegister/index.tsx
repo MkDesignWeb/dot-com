@@ -41,7 +41,7 @@ export const PointRegister = () => {
 
                 <div className={style.cardContent}>
                     {employee && employee.map((emp) => (
-                        <UserCard key={emp.id} id={emp.id} company={emp.companny} name={emp.name} setUser={setUser}/>
+                        <UserCard key={emp.id} id={emp.id} companny={emp.companny} name={emp.name} setUser={setUser}/>
                     ))}
                 </div>
 

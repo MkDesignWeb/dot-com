@@ -17,6 +17,14 @@ export const ConfigPage = () => {
 
     const [ip, setIp] = useState("");
     const [port, setPort] = useState("");
+    const [showMessage, setShowMessage] = useState(false);
+
+    const handleTostMessage = () => {
+        setShowMessage(true);
+        setTimeout(() => {
+            setShowMessage(false);
+        }, 2000);
+    }
 
     useEffect(() => {
         window.config.get().then(cfg => {
@@ -32,6 +40,7 @@ export const ConfigPage = () => {
     }
 
     const handleSubmit = (e: React.FormEvent) => {
+        handleTostMessage()
         e.preventDefault();
         save();
     }
@@ -43,26 +52,30 @@ export const ConfigPage = () => {
             <form onSubmit={handleSubmit}>
                 <div className={style.imputGroup}>
                     <label htmlFor="ipServer">IP Server</label>
-                    <input 
-                        type="text" 
-                        id="ipServer" 
-                        name="ipServer" 
+                    <input
+                        type="text"
+                        id="ipServer"
+                        name="ipServer"
                         value={ip}
                         onChange={(e) => setIp(e.target.value)}
                     />
                 </div>
                 <div className={style.imputGroup}>
                     <label htmlFor="port">Porta</label>
-                    <input 
-                        type="text" 
-                        id="port" 
-                        name="port" 
+                    <input
+                        type="text"
+                        id="port"
+                        name="port"
                         value={port}
                         onChange={(e) => setPort(e.target.value)}
                     />
                 </div>
                 <button >Salvar</button>
+
             </form>
+            <span className={`${style.saveMessage} ${showMessage ? style.show : style.off}`}>
+                As configurações foram salvas com sucesso!
+            </span>
 
         </main>
     )

@@ -25,10 +25,9 @@ export const ModalPoint = ({ modalOpen, setModalOpen, user }: ModalPointProps) =
     }
 
      const handleCloseModal = () => {
-        setModalOpen(false);
-        navigate("/");
-        setStatus("idle");
         setPassword("");
+        setModalOpen(false);
+        setStatus("idle");
     }
 
     const handleRegisterPoint = async () => {
@@ -46,6 +45,7 @@ export const ModalPoint = ({ modalOpen, setModalOpen, user }: ModalPointProps) =
         if(status === "success") {
             setTimeout(() => {
                 handleCloseModal();
+                navigate("/");
             }, 2000);
         }
         if(status === "error") {
@@ -56,6 +56,7 @@ export const ModalPoint = ({ modalOpen, setModalOpen, user }: ModalPointProps) =
         if(status === "maxPunch") {
             setTimeout(() => {
                 handleCloseModal();
+                navigate("/");
             }, 2000);
         }
     }, [status]);
@@ -65,7 +66,7 @@ export const ModalPoint = ({ modalOpen, setModalOpen, user }: ModalPointProps) =
             case "idle":
                 return (
                 <>
-                    <input type="password" placeholder="Digite a senha do ponto digital" onChange={handlePasswordChange}/>
+                    <input type="password" autoFocus placeholder="Digite a senha do ponto digital" value={password} onChange={handlePasswordChange}/>
                     <button onClick={handleRegisterPoint}>Registrar ponto</button>
                 </>);
             case "loading":
@@ -96,7 +97,7 @@ export const ModalPoint = ({ modalOpen, setModalOpen, user }: ModalPointProps) =
                 </form>
 
             </div>
-            <div className={style.bgBlack} onClick={() => setModalOpen(false)} />
+            <div className={style.bgBlack} onClick={() => handleCloseModal()} />
         </div>
     )
 }

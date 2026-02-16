@@ -80,3 +80,21 @@ button {
         }
     }
 }
+
+.show{
+    bottom: 2rem;
+}
+
+.off{
+    bottom: -3rem;
+}
+
+.saveMessage{
+    position: absolute;
+
+    background-color: $primary;
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}

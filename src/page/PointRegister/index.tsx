@@ -4,10 +4,22 @@ import style from  "./styles.module.scss";
 import { ModalPoint } from "../../components/ModalPoint";
 import { useEffect, useState } from "react";
 import type { User } from "../../types/userType";
+import axiosInstance from "../../axios/axios.config";
 
-export const PointRegister = () => {    
+export const PointRegister = () => { 
+    const [employee, setEmployee] = useState<null | User[]>(null)    
     const [user, setUser] = useState<null | User>(null) 
     const [modalOpen, setModalOpen] = useState(false)
+
+     useEffect( () => {
+        axiosInstance.get('/employee')
+            .then((response) => {
+                setEmployee(response.data);
+            })
+            .catch((error) => {
+                console.error('Erro ao buscar funcionários:', error);
+            });
+    }, []);
 
     useEffect(() => {
         if(user) {
@@ -16,6 +28,8 @@ export const PointRegister = () => {
             setModalOpen(false)
         }
     }, [user])
+
+   
 
     return (
         <main className={style.container}>
@@ -28,8 +42,9 @@ export const PointRegister = () => {
                 </div>
 
                 <div className={style.cardContent}>
-                    <UserCard company={1} name="Matheus Kauan" setUser={setUser}/>
-                    <UserCard company={2} name="fulano" setUser={setUser}/>
+                    {employee && employee.map((emp) => (
+                        <UserCard key={emp.id} id={emp.id} company={emp.companny} name={emp.name} setUser={setUser}/>
+                    ))}
                 </div>
 
                 <Link to="/" className={style.pointRegisterBack}>

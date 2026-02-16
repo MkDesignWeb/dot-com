@@ -71,3 +71,17 @@
     font-weight: 500;
     font-family: inherit;
 }
+
+.errorMessage {
+    margin-top: 1rem;
+    color: $error;
+    font-size: 2rem;
+    font-weight: 500;
+}
+
+.loadingMessage {
+    margin-top: 1rem;
+    color: $primary;
+    font-size: 2rem;
+    font-weight: 500;
+}

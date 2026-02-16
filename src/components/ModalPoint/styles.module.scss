@@ -108,3 +108,21 @@
     }
 }
 
+.error {
+    color: $error;
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+.loading {
+    color: $text-color;
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+.success {
+    color: $secudary;
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+

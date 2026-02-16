@@ -10,6 +10,12 @@
     font-size: 1.2rem;
     border-radius: 0.5rem;
     width: 300px;
+    color: $text-color;
+    transition: all 0.3s ease;
+
+    &:hover {
+        color: white;
+    }
 
      button {
         color: white 

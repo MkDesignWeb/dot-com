@@ -1,8 +1,8 @@
-import axiosInstance from "../axios/axios.config";
+import { api } from "../axios/axios.config";
 
 class panchService {
     async setPanch(employeeId: string, password: string) {
-        const res = await axiosInstance.post('/punch', { employeeId, password })
+        const res = await api.post('/punch', { employeeId, password })
         return res;
     }
 }

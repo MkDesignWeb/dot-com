@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import style from "./styles.module.scss"
 import timeService from "../../service/timeService"
+import ConfigSVG from "../../svg/ConfigSVG"
 
 const formatarData = (d: Date) =>
     d.toLocaleDateString("pt-BR", {
@@ -85,6 +86,7 @@ export const TimePage = () => {
 
     return (
         <main className={style.container}>
+            <Link to="/config" className={style.configBtn}><ConfigSVG /></Link>
             {handleShowComponent()}
         </main>
     )

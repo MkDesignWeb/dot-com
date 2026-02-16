@@ -4,7 +4,7 @@ import style from  "./styles.module.scss";
 import { ModalPoint } from "../../components/ModalPoint";
 import { useEffect, useState } from "react";
 import type { User } from "../../types/userType";
-import axiosInstance from "../../axios/axios.config";
+import employeeService from "../../service/employeeService";
 
 export const PointRegister = () => { 
     const [employee, setEmployee] = useState<null | User[]>(null)    
@@ -12,13 +12,11 @@ export const PointRegister = () => {
     const [modalOpen, setModalOpen] = useState(false)
 
      useEffect( () => {
-        axiosInstance.get('/employee')
-            .then((response) => {
-                setEmployee(response.data);
+            employeeService.getEmployees().then(res => {
+                setEmployee(res.data)
+            }).catch(err => {
+                console.error("Erro ao buscar funcionários:");
             })
-            .catch((error) => {
-                console.error('Erro ao buscar funcionários:', error);
-            });
     }, []);
 
     useEffect(() => {

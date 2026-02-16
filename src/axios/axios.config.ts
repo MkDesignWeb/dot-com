@@ -1,14 +1,17 @@
-import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
+import axios from "axios";
 
-const axiosConfig: AxiosRequestConfig = {
-    baseURL: 'http://localhost:3000',
-    timeout: 10000,
-    headers: {
-        'Content-Type': 'application/json',
-    },
-};
+export const api = axios.create();
 
-const axiosInstance: AxiosInstance = axios.create(axiosConfig);
+api.interceptors.request.use(async config => {
+  const cfg = await window.config.get();
+  if (!cfg) {
+    throw new Error("Configuração não encontrada");
+  }
+  if(!cfg.ip || !cfg.port) {
+    throw new Error("Configuração inválida: IP ou Porta não definidos");
+  }
 
+  config.baseURL = `http://${cfg.ip}:${cfg.port}`;
 
-export default axiosInstance;
+  return config;
+});

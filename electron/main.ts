@@ -3,6 +3,15 @@ import { BrowserWindow } from "electron";
 import path from "path";
 import { fileURLToPath } from "url";
 import { existsSync } from "fs";
+import store from "./store.js";
+
+ipcMain.handle("config:get", () => {
+  return store.get("server") || {};
+});
+
+ipcMain.handle("config:set", (_, data) => {
+  store.set("server", data);
+});
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 

@@ -1,8 +1,9 @@
-import axiosInstance from "../axios/axios.config";
+import { api } from "../axios/axios.config";
+
 
 class timeService {
     async getTime() {
-        const res = await axiosInstance.get('/time');
+        const res = await api.get('/time');
         return res;
     }
 }

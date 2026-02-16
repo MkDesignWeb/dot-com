@@ -1,5 +1,10 @@
 import { contextBridge, ipcRenderer } from "electron";
 
+contextBridge.exposeInMainWorld("config", {
+  get: () => ipcRenderer.invoke("config:get"),
+  set: (data: any) => ipcRenderer.invoke("config:set", data),
+});
+
 contextBridge.exposeInMainWorld("api", {
   versao: "1.0.0",
   window: {

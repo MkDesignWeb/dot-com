@@ -85,3 +85,34 @@
     font-size: 2rem;
     font-weight: 500;
 }
+
+.configBtn {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    top: 4rem;
+    right: 2rem;
+    width: 2rem;
+    height: 2rem;
+    padding: 0.5rem;
+    border: none;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+
+    svg {
+        fill: #1a1a1a;
+        transition: fill 0.3s ease;
+    }
+
+    &:hover {
+        background-color: $primary;
+
+        svg {
+            fill: #fff;
+        }
+    }
+
+
+}

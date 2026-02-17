@@ -1,4 +1,3 @@
-import * as React from "react";
 const ConfigSVG = () => (
   <svg
     id="Layer_1"

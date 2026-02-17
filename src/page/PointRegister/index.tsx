@@ -14,7 +14,7 @@ export const PointRegister = () => {
      useEffect( () => {
             employeeService.getEmployees().then(res => {
                 setEmployee(res.data)
-            }).catch(err => {
+            }).catch(() => {
                 console.error("Erro ao buscar funcionários:");
             })
     }, []);

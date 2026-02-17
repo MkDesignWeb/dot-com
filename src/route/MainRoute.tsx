@@ -3,7 +3,6 @@ import { TimePage } from "../page/TimePage";
 import { PointRegister } from "../page/PointRegister";
 import { ConfigPage } from "../page/configPage";
 
-
 function MainRoute() {
   return (
     <HashRouter>

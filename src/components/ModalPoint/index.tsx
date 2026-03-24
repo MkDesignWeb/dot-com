@@ -1,103 +1,118 @@
+﻿import { useCallback, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Alert,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { LoadingButton } from "@mui/lab";
 import type { User } from "../../types/userType";
-import style from "./styles.module.scss"
-import UserIconSVG from "../../svg/UserIconSVG";
-import { useEffect, useState } from "react";
-import panchService from "../../service/panchService";
-import { useNavigate  } from "react-router";
-import { AxiosError } from "axios";
+import { usePointRegistration } from "../../hooks/usePointRegistration";
 
 type ModalPointProps = {
-    modalOpen: boolean;
-    setModalOpen: (open: boolean) => void;
-    user?: User
-}
+  modalOpen: boolean;
+  setModalOpen: (open: boolean) => void;
+  user?: User;
+};
+
+const formatPtBrDateTime = (value: string) => {
+  if (!value) return "";
+
+  const parsedDate = new Date(value);
+  if (Number.isNaN(parsedDate.getTime())) return value;
+
+  return parsedDate.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+};
 
 export const ModalPoint = ({ modalOpen, setModalOpen, user }: ModalPointProps) => {
-    const [status, setStatus] = useState<"success" | "error" | "idle" | "loading" | "maxPunch">("idle");
-    const [errorMessage, setErrorMessage] = useState("");
-    const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+  const { status, errorMessage, password, setPassword, systemLocalDate, registerPoint, reset } = usePointRegistration();
 
-    const navigate = useNavigate();
-    
-    const handlePasswordChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const password = event.target.value;
-        setPassword(password);
+  const handleClose = useCallback(() => {
+    setModalOpen(false);
+    reset();
+  }, [reset, setModalOpen]);
+
+  useEffect(() => {
+    if (!modalOpen) return;
+
+    if (status === "success" || status === "maxPunch") {
+      const timer = setTimeout(() => {
+        handleClose();
+        navigate("/");
+      }, 2000);
+      return () => clearTimeout(timer);
     }
 
-     const handleCloseModal = () => {
-        setPassword("");
-        setModalOpen(false);
-        setStatus("idle");
+    if (status === "error") {
+      const timer = setTimeout(() => reset(), 2500);
+      return () => clearTimeout(timer);
     }
+  }, [handleClose, modalOpen, navigate, reset, status]);
 
-    const handleRegisterPoint = async () => {
-        try {
-            const res = await panchService.setPanch(user!.id, password)
-            setStatus("success");
-            console.log("Resposta do servidor:", res);
-        } catch (error: AxiosError | any) {
-            setErrorMessage(error.response.data.error)
-            setStatus(error.response.data.error === "Limite de pontos atingido para hoje" ? "maxPunch" : "error");
-        }
-    }
+  return (
+    <Dialog
+      open={modalOpen}
+      onClose={handleClose}
+      fullWidth
+      maxWidth="sm"
+      PaperProps={{ sx: { borderRadius: 2, p: 1 } }}
+    >
+      <DialogTitle sx={{ pb: 1 }}>{user?.name ?? "Registrar ponto"}</DialogTitle>
+      <DialogContent>
+        <Stack spacing={2} sx={{ mt: 0.5 }}>
+          <Typography variant="body2" color="text.secondary">
+            Empresa: {user?.companny ?? "-"}
+          </Typography>
 
-    useEffect(() => {
-        if(status === "success") {
-            setTimeout(() => {
-                handleCloseModal();
-                navigate("/");
-            }, 2000);
-        }
-        if(status === "error") {
-            setTimeout(() => {
-                setStatus("idle");
-            }, 2000);
-        }
-        if(status === "maxPunch") {
-            setTimeout(() => {
-                handleCloseModal();
-                navigate("/");
-            }, 2000);
-        }
-    }, [status]);
+          {(status === "idle" || status === "loading") && (
+            <TextField
+              type="password"
+              label="Senha"
+              placeholder="Digite a senha do ponto digital"
+              autoFocus
+              fullWidth
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          )}
 
-    const handleShowComponent = () => {
-        switch (status) {
-            case "idle":
-                return (
-                <>
-                    <input type="password" autoFocus placeholder="Digite a senha do ponto digital" value={password} onChange={handlePasswordChange}/>
-                    <button onClick={handleRegisterPoint}>Registrar ponto</button>
-                </>);
-            case "loading":
-                return <span className={style.loading}>Registrando ponto...</span>;
-            case "success":
-                return <span className={style.success}>Ponto registrado com sucesso!</span>;
-            case "error":
-                return <span className={style.error}>{errorMessage}</span>;
-            case "maxPunch":            
-            return <span className={style.error}>{errorMessage}</span>;
-            default:
-                return null;
-        }   
-    }
+          {status === "success" && (
+            <Alert severity="success" variant="filled">
+              Ponto registrado com sucesso {systemLocalDate ? `em ${formatPtBrDateTime(systemLocalDate)}` : ""}.
+            </Alert>
+          )}
 
-    return (
-        <div className={`${style.modalContainer} ${modalOpen ? style.open : ""}`}>
-
-            <div className={style.container}>
-                <div className={style.userContent}>
-                    <UserIconSVG />
-                    <h3>{user?.name}</h3>
-                    <span>Empresa: {user?.companny}</span>
-                </div>
-                
-                <form onSubmit={(e) => { e.preventDefault(); handleRegisterPoint(); }} className={style.passwordContent}>
-                    {handleShowComponent()}
-                </form>
-
-            </div>
-            <div className={style.bgBlack} onClick={() => handleCloseModal()} />
-        </div>
-    )
-}
+          {status === "maxPunch" && <Alert severity="warning">{errorMessage}</Alert>}
+          {status === "error" && <Alert severity="error">{errorMessage}</Alert>}
+        </Stack>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <LoadingButton onClick={handleClose} variant="text" color="inherit">
+          Fechar
+        </LoadingButton>
+        <LoadingButton
+          variant="contained"
+          loading={status === "loading"}
+          disabled={!password.trim() || status === "success" || status === "maxPunch"}
+          onClick={() => void registerPoint(user?.id)}
+        >
+          Registrar ponto
+        </LoadingButton>
+      </DialogActions>
+    </Dialog>
+  );
+};

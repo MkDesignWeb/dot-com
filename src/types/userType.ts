@@ -1,6 +1,7 @@
 export interface User {
-    id: string;
-    name: string;
-    companny: number;
-    level: number;
+  id: number;
+  name: string;
+  companny: string;
+  level?: number;
+  admissionDate?: string;
 }

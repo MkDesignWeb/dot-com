@@ -1,7 +1,7 @@
-import { HashRouter, Routes, Route } from "react-router-dom";
-import { TimePage } from "../page/TimePage";
-import { PointRegister } from "../page/PointRegister";
-import { ConfigPage } from "../page/configPage";
+﻿import { HashRouter, Route, Routes } from "react-router-dom";
+import { ConfigPage } from "../pages/ConfigPage";
+import { PointRegister } from "../pages/PointRegister";
+import { TimePage } from "../pages/TimePage";
 
 function MainRoute() {
   return (

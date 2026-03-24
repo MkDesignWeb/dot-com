@@ -11,8 +11,17 @@ export interface ElectronAPI {
   };
 }
 
+export interface ServerConfig {
+  ip: string;
+  port: string;
+}
+
 declare global {
   interface Window {
     api: ElectronAPI;
+    config: {
+      get: () => Promise<ServerConfig | null>;
+      set: (cfg: ServerConfig) => Promise<void>;
+    };
   }
 }

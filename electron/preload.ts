@@ -1,8 +1,13 @@
 import { contextBridge, ipcRenderer } from "electron";
 
+type ServerConfig = {
+  ip: string;
+  port: string;
+};
+
 contextBridge.exposeInMainWorld("config", {
-  get: () => ipcRenderer.invoke("config:get"),
-  set: (data: any) => ipcRenderer.invoke("config:set", data),
+  get: () => ipcRenderer.invoke("config:get") as Promise<ServerConfig | null>,
+  set: (data: ServerConfig) => ipcRenderer.invoke("config:set", data),
 });
 
 contextBridge.exposeInMainWorld("api", {

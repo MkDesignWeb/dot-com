@@ -39,6 +39,7 @@
     "@mui/icons-material": "^7.3.9",
     "@mui/lab": "^7.0.1-beta.23",
     "@mui/material": "^7.3.9",
+    "@tensorflow/tfjs": "^1.7.0",
     "axios": "^1.13.5",
     "electron-store": "^11.0.2",
     "electron-updater": "^6.7.3",

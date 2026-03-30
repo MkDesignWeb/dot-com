@@ -1,6 +1,7 @@
-﻿import { HashRouter, Route, Routes } from "react-router-dom";
+import { HashRouter, Route, Routes } from "react-router-dom";
 import { ConfigPage } from "../pages/ConfigPage";
-import { PointRegister } from "../pages/PointRegister";
+import { PointRegisterFaceId } from "../pages/PointRegisterFaceId";
+import { PointRegisterPassword } from "../pages/PointRegisterPassword";
 import { TimePage } from "../pages/TimePage";
 
 function MainRoute() {
@@ -8,7 +9,8 @@ function MainRoute() {
     <HashRouter>
       <Routes>
         <Route path="/" element={<TimePage />} />
-        <Route path="/pointRegister" element={<PointRegister />} />
+        <Route path="/pointRegister" element={<PointRegisterFaceId />} />
+        <Route path="/pointRegister/password" element={<PointRegisterPassword />} />
         <Route path="/config" element={<ConfigPage />} />
       </Routes>
     </HashRouter>

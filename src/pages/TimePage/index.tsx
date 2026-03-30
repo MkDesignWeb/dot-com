@@ -1,4 +1,4 @@
-﻿import {
+import {
   Alert,
   Box,
   Button,
@@ -34,7 +34,15 @@ export const TimePage = () => {
   const { status, time, retry } = useServerTime();
 
   return (
-    <Box sx={{ position: "relative", minHeight: "100%", display: "grid", placeItems: "center" }}>
+    <Box
+      sx={{
+        position: "relative",
+        minHeight: "100%",
+        width: "100%",
+        display: "grid",
+        placeItems: "center",
+      }}
+    >
       <Tooltip title="Configuracoes">
         <IconButton
           component={RouterLink}

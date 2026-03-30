@@ -55,7 +55,7 @@ export const ConfigPage = () => {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ py: { xs: 2, md: 4 } }}>
+    <Container maxWidth="sm" sx={{ py: { xs: 2, md: 4 }, height: "100%", overflow: "auto" }}>
       <Stack spacing={3}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <IconButton component={RouterLink} to="/" color="secondary">

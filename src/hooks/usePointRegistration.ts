@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import axios from "axios";
 import punchService from "../services/punchService";
 
@@ -9,12 +9,30 @@ export const usePointRegistration = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [password, setPassword] = useState("");
   const [systemLocalDate, setSystemLocalDate] = useState("");
+  const [employeeName, setEmployeeName] = useState("");
 
   const reset = () => {
     setStatus("idle");
     setErrorMessage("");
     setPassword("");
     setSystemLocalDate("");
+    setEmployeeName("");
+  };
+
+  const handleRequestError = (error: unknown) => {
+    const fallbackMessage = "Nao foi possivel registrar o ponto.";
+    const message = axios.isAxiosError<{ error?: string }>(error)
+      ? (error.response?.data?.error ?? error.message)
+      : fallbackMessage;
+
+    setErrorMessage(message || fallbackMessage);
+    setStatus(message === "Limite de pontos atingido para hoje" ? "maxPunch" : "error");
+  };
+
+  const handleSuccess = (systemDate?: string, confirmedEmployeeName?: string) => {
+    setSystemLocalDate(systemDate ?? "");
+    setEmployeeName(confirmedEmployeeName ?? "");
+    setStatus("success");
   };
 
   const registerPoint = async (employeeId?: string | number) => {
@@ -40,16 +58,26 @@ export const usePointRegistration = () => {
       setStatus("loading");
       setErrorMessage("");
       const response = await punchService.setPunch(normalizedEmployeeId, password.trim());
-      setSystemLocalDate(response.systemLocalDate ?? "");
-      setStatus("success");
+      handleSuccess(response.systemLocalDate, response.punch?.employeeName);
     } catch (error) {
-      const fallbackMessage = "Nao foi possivel registrar o ponto.";
-      const message = axios.isAxiosError<{ error?: string }>(error)
-        ? (error.response?.data?.error ?? error.message)
-        : fallbackMessage;
+      handleRequestError(error);
+    }
+  };
 
-      setErrorMessage(message || fallbackMessage);
-      setStatus(message === "Limite de pontos atingido para hoje" ? "maxPunch" : "error");
+  const registerPointWithDescriptor = async (descriptor: number[]) => {
+    if (descriptor.length !== 128 || descriptor.some((value) => !Number.isFinite(value))) {
+      setErrorMessage("Nao foi possivel gerar uma referencia facial valida.");
+      setStatus("error");
+      return;
+    }
+
+    try {
+      setStatus("loading");
+      setErrorMessage("");
+      const response = await punchService.setFaceReferencePunch(descriptor);
+      handleSuccess(response.systemLocalDate, response.punch?.employeeName);
+    } catch (error) {
+      handleRequestError(error);
     }
   };
 
@@ -59,7 +87,9 @@ export const usePointRegistration = () => {
     password,
     setPassword,
     systemLocalDate,
+    employeeName,
     registerPoint,
+    registerPointWithDescriptor,
     reset,
   };
 };

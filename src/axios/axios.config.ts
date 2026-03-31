@@ -8,6 +8,6 @@ api.interceptors.request.use(async (config) => {
     throw new Error("Configuracao invalida: IP ou porta nao definidos.");
   }
 
-  config.baseURL = `http://${cfg.ip}:${cfg.port}`;
+  config.baseURL = `http://${cfg.ip}:${cfg.port}/api`;
   return config;
 });

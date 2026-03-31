@@ -1,4 +1,4 @@
-import { app, ipcMain, BrowserWindow } from "electron";
+import { app, ipcMain, BrowserWindow, nativeImage } from "electron";
 import { existsSync } from "fs";
 import store from "./store.js";
 import path from "path";
@@ -47,8 +47,15 @@ const getPreloadPath = () => {
   return preloadPath;
 };
 
+const getAppIconPath = () => {
+  const iconBasePath = app.isPackaged ? process.resourcesPath : app.getAppPath();
+  const iconPath = path.join(iconBasePath, "build", "icons", "app.ico");
+  return existsSync(iconPath) ? iconPath : undefined;
+};
+
 function createWindow() {
   const preloadPath = getPreloadPath();
+  const iconPath = process.platform === "win32" ? getAppIconPath() : undefined;
 
   mainWindow = new BrowserWindow({
     width: 1200,
@@ -56,6 +63,7 @@ function createWindow() {
     minHeight: 800,
     minWidth: 1200,
     frame: true,
+    icon: iconPath ? nativeImage.createFromPath(iconPath) : undefined,
     webPreferences: {
       preload: preloadPath,
       contextIsolation: true,

@@ -7,22 +7,37 @@
   "build": {
     "appId": "com.dot-com.desktop",
     "productName": "DOT COM",
+    "extraResources": [
+      {
+        "from": "build/icons",
+        "to": "build/icons",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
     "publish": [
       {
         "provider": "github",
         "owner": "MkDesignWeb",
         "repo": "dot-com"
       }
-    ]
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icons/app.ico"
+    },
+    "nsis": {
+      "installerIcon": "build/icons/installer.ico",
+      "uninstallerIcon": "build/icons/installer.ico",
+      "installerHeaderIcon": "build/icons/installer.ico"
+    }
   },
   "files": [
     "dist-react/**/*",
     "dist-electron/**/*",
     "package.json"
   ],
-  "win": {
-    "target": "nsis"
-  },
   "scripts": {
     "build:electron": "tsc -p electron && tsc -p electron/tsconfig.preload.json",
     "dev": "npm run build:electron && concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",

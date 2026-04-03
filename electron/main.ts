@@ -75,7 +75,7 @@ function createWindow() {
   const indexPath = path.join(app.getAppPath(), "dist-react/index.html");
 
   if (isDev) {
-    void mainWindow.loadURL("http://localhost:5173");
+    void mainWindow.loadURL("http://localhost:5174");
   } else {
     void mainWindow.loadFile(indexPath);
   }

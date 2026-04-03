@@ -428,14 +428,17 @@ export const PointRegisterFaceId = () => {
           }}
         />
 
-        <canvas
-          ref={overlayCanvasRef}
-          style={{
-            position: "absolute",
-            height: "100%",
-            pointerEvents: "none",
-          }}
-        />
+    
+          <canvas
+            ref={overlayCanvasRef}
+            style={{
+              position: "absolute",
+              display: isReady ? "block" : "none",
+              height: "100%",
+              pointerEvents: "none",
+            }}
+          />
+       
 
         <canvas ref={processingCanvasRef} style={{ display: "none" }} />
 

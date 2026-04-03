@@ -1,106 +1,133 @@
 ﻿import { useEffect, useState } from "react";
-import { Box, IconButton, Stack, Typography, useTheme } from "@mui/material";
-import RemoveRoundedIcon from "@mui/icons-material/RemoveRounded";
-import CheckBoxOutlineBlankRoundedIcon from "@mui/icons-material/CheckBoxOutlineBlankRounded";
-import FilterNoneRoundedIcon from "@mui/icons-material/FilterNoneRounded";
-import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import style from "./styles.module.scss";
+import DotIcon from "../../svg/Dot-icon";
 
 export const TopBar = () => {
-  const theme = useTheme();
-  const [isMaximized, setIsMaximized] = useState(false);
+    const [isMaximized, setIsMaximized] = useState(false);
 
-  useEffect(() => {
-    if (!window.api?.window) return;
+    useEffect(() => {
+        // Verificar se a API está disponível
+        if (!window.api) {
+            console.error("API do Electron não está disponível. Verifique se o preload foi carregado corretamente.");
+            return;
+        }
 
-    const check = async () => {
-      try {
-        const maximized = await window.api.window.isMaximized();
-        setIsMaximized(maximized);
-      } catch {
-        setIsMaximized(false);
-      }
+        if (!window.api.window) {
+            console.error("API window não está disponível.");
+            return;
+        }
+
+        // Verificar estado inicial
+        const checkMaximized = async () => {
+            try {
+                const maximized = await window.api.window.isMaximized();
+                setIsMaximized(maximized);
+            } catch (error) {
+                console.error("Erro ao verificar estado de maximização:", error);
+            }
+        };
+
+        checkMaximized();
+
+        // Escutar eventos de maximização/restauração
+        if (window.api?.window) {
+            const removeMaximizeListener = window.api.window.onMaximize(() => {
+                setIsMaximized(true);
+            });
+
+            const removeUnmaximizeListener = window.api.window.onUnmaximize(() => {
+                setIsMaximized(false);
+            });
+
+            return () => {
+                removeMaximizeListener();
+                removeUnmaximizeListener();
+            };
+        }
+    }, []);
+
+    const handleMinimize = () => {
+        if (window.api?.window) {
+            window.api.window.minimize().catch((err) => {
+                console.error("Erro ao minimizar:", err);
+            });
+        } else {
+            console.warn("API do Electron não disponível");
+        }
     };
 
-    void check();
-
-    const removeMaximizeListener = window.api.window.onMaximize(() => setIsMaximized(true));
-    const removeUnmaximizeListener = window.api.window.onUnmaximize(() => setIsMaximized(false));
-
-    return () => {
-      removeMaximizeListener();
-      removeUnmaximizeListener();
+    const handleMaximize = () => {
+        if (window.api?.window) {
+            window.api.window.maximize().catch((err) => {
+                console.error("Erro ao maximizar:", err);
+            });
+        } else {
+            console.warn("API do Electron não disponível");
+        }
     };
-  }, []);
 
-  const handleMinimize = () => {
-    void window.api?.window?.minimize();
-  };
+    const handleClose = () => {
+        if (window.api?.window) {
+          
+            window.api.window.close().catch((err) => {
+                console.error("Erro ao fechar:", err);
+            });
+        } else {
+            console.warn("API do Electron não disponível");
+        }
+    };
 
-  const handleMaximize = () => {
-    if (!window.api?.window) return;
 
-    if (isMaximized) {
-      void window.api.window.unmaximize();
-      return;
-    }
 
-    void window.api.window.maximize();
-  };
-
-  const handleClose = () => {
-    void window.api?.window?.close();
-  };
-
-  return (
-    <Box
-      component="nav"
-      sx={{
-        height: 36,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        borderBottom: `1px solid ${theme.palette.divider}`,
-        bgcolor: "primary.main",
-        userSelect: "none",
-      }}
-    >
-      <Typography
-        sx={{
-          px: 1.5,
-          fontSize: 13,
-          fontWeight: 700,
-          letterSpacing: 0.4,
-          color: "text.primary",
-          WebkitAppRegion: "drag",
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-          flex: 1,
-        }}
-      >
-        DOT COM
-      </Typography>
-
-      <Stack direction="row" sx={{ WebkitAppRegion: "no-drag" }}>
-        <IconButton onClick={handleMinimize} size="small" sx={{ borderRadius: 0, width: 46, height: 36 }}>
-          <RemoveRoundedIcon fontSize="small" />
-        </IconButton>
-        <IconButton onClick={handleMaximize} size="small" sx={{ borderRadius: 0, width: 46, height: 36 }}>
-          {isMaximized ? <FilterNoneRoundedIcon fontSize="small" /> : <CheckBoxOutlineBlankRoundedIcon fontSize="small" />}
-        </IconButton>
-        <IconButton
-          onClick={handleClose}
-          size="small"
-          sx={{
-            borderRadius: 0,
-            width: 46,
-            height: 36,
-            "&:hover": { bgcolor: "error.main", color: "error.contrastText" },
-          }}
-        >
-          <CloseRoundedIcon fontSize="small" />
-        </IconButton>
-      </Stack>
-    </Box>
-  );
+    return (
+        <nav className={style.customTopbar}>
+            <div className={style.topbarLogo}>
+                <span><DotIcon /></span>
+            </div>
+            <div className={style.topbarActions}>
+                <button
+                    type="button"
+                    className={`${style.topbarButton} ${style.topbarButtonMinimize}`}
+                    onClick={handleMinimize}
+                    title="Minimizar"
+                >
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <rect x="0" y="5" width="12" height="1" fill="currentColor" />
+                    </svg>
+                </button>
+                <button
+                    type="button"
+                    className={`${style.topbarButton} ${style.topbarButtonMaximize} ${isMaximized ? "restore" : ""}`}
+                    onClick={handleMaximize}
+                    title={isMaximized ? "Restaurar" : "Maximizar"}
+                >
+                    {isMaximized ? (
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                            <rect x="2" y="2" width="8" height="8" stroke="currentColor" strokeWidth="1" fill="none" />
+                            <rect x="0" y="0" width="8" height="8" stroke="currentColor" strokeWidth="1" fill="none" />
+                        </svg>
+                    ) : (
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                            <rect x="0" y="0" width="12" height="12" stroke="currentColor" strokeWidth="1" fill="none" />
+                        </svg>
+                    )}
+                </button>
+                <button
+                    type="button"
+                    className={`${style.topbarButton} ${style.topbarButtonClose}`}
+                    onClick={handleClose}
+                    title="Fechar"
+                >
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path
+                            d="M1 1L11 11M11 1L1 11"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                        />
+                    </svg>
+                </button>
+            </div>
+        </nav>
+    );
 };

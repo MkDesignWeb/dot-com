@@ -62,7 +62,7 @@ function createWindow() {
     height: 800,
     minHeight: 800,
     minWidth: 1200,
-    frame: true,
+    frame: false,
     icon: iconPath ? nativeImage.createFromPath(iconPath) : undefined,
     webPreferences: {
       preload: preloadPath,
@@ -75,7 +75,7 @@ function createWindow() {
   const indexPath = path.join(app.getAppPath(), "dist-react/index.html");
 
   if (isDev) {
-    void mainWindow.loadURL("http://localhost:5174");
+    void mainWindow.loadURL("http://localhost:5173");
   } else {
     void mainWindow.loadFile(indexPath);
   }

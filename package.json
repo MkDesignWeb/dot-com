@@ -6,7 +6,7 @@
   "main": "dist-electron/main.js",
   "build": {
     "appId": "com.dot-com.desktop",
-    "productName": "DOT COM",
+    "productName": "Dot Com",
     "extraResources": [
       {
         "from": "build/icons",
@@ -54,11 +54,11 @@
     "@mui/icons-material": "^7.3.9",
     "@mui/lab": "^7.0.1-beta.23",
     "@mui/material": "^7.3.9",
-    "@tensorflow/tfjs": "^1.7.0",
+    "@tensorflow/tfjs": "^4.0.0",
+    "@vladmandic/face-api": "^1.7.15",
     "axios": "^1.13.5",
     "electron-store": "^11.0.2",
     "electron-updater": "^6.7.3",
-    "face-api.js": "^0.22.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.13.0"

@@ -1,6 +1,6 @@
-﻿import "@tensorflow/tfjs";
-import { useEffect, useRef, useState } from "react";
-import * as faceapi from "face-api.js";
+import "@tensorflow/tfjs";
+import { useEffect, useRef, useState, useMemo } from "react";
+import * as faceapi from "@vladmandic/face-api";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import PasswordRoundedIcon from "@mui/icons-material/PasswordRounded";
 import {
@@ -13,12 +13,9 @@ import {
 } from "@mui/material";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { usePointRegistration } from "../../hooks/usePointRegistration";
+import { useFaceApiDetection } from "../../hooks/useFaceApiDetection";
 
-const MODEL_PATH = "/models";
-const DETECTOR_OPTIONS = new faceapi.TinyFaceDetectorOptions({
-  inputSize: 320,
-  scoreThreshold: 0.5,
-});
+const MODEL_PATH = "models";
 
 const formatPtBrDateTime = (value: string) => {
   if (!value) return "";
@@ -39,7 +36,7 @@ const formatPtBrDateTime = (value: string) => {
 
 const drawGuide = (
   canvas: HTMLCanvasElement,
-  detection?: faceapi.FaceDetection,
+  detection?: faceapi.FaceDetection | null,
   sourceWidth?: number,
   sourceHeight?: number,
 ) => {
@@ -72,14 +69,39 @@ export const PointRegisterFaceId = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const processingCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const detectionFrameRef = useRef<number | null>(null);
 
-  const { status, errorMessage, systemLocalDate, employeeName, registerPointWithDescriptor, reset } = usePointRegistration();
+  const {
+    status,
+    errorMessage,
+    systemLocalDate,
+    employeeName,
+    registerPointWithDescriptor,
+    reset,
+  } = usePointRegistration();
 
-  const [isBooting, setIsBooting] = useState(true);
+  const detectorOptions = useMemo(
+    () =>
+      new faceapi.TinyFaceDetectorOptions({
+        inputSize: 320,
+        scoreThreshold: 0.5,
+      }),
+    []
+  );
+
+  const {
+    isLoaded,
+    isCameraReady,
+    detection,
+    error: hookError,
+    startCamera,
+    stopCamera,
+    captureDescriptor,
+  } = useFaceApiDetection(videoRef, {
+    modelPath: MODEL_PATH,
+    detectorOptions,
+  });
+
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [isReady, setIsReady] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [fatalError, setFatalError] = useState("");
   const [showPasswordFallback, setShowPasswordFallback] = useState(false);
@@ -95,138 +117,29 @@ export const PointRegisterFaceId = () => {
 
     overlay.width = width;
     overlay.height = height;
-    drawGuide(overlay);
+    drawGuide(overlay, detection, video.videoWidth, video.videoHeight);
   };
 
   useEffect(() => {
-    const overlayCanvas = overlayCanvasRef.current;
-    const video = videoRef.current;
-
-    if (!overlayCanvas || !video || !isReady || isBusy || status === "success" || fatalError) {
-      if (overlayCanvas) {
-        drawGuide(overlayCanvas);
-      }
-      if (detectionFrameRef.current !== null) {
-        window.cancelAnimationFrame(detectionFrameRef.current);
-        detectionFrameRef.current = null;
-      }
-      return undefined;
+    if (detection !== undefined) {
+      syncOverlay();
     }
-
-    let cancelled = false;
-
-    const detectFaceInRealtime = async () => {
-      if (cancelled) return;
-
-      const currentVideo = videoRef.current;
-      const currentOverlay = overlayCanvasRef.current;
-
-      if (!currentVideo || !currentOverlay || currentVideo.readyState < 2 || !currentVideo.videoWidth || !currentVideo.videoHeight) {
-        detectionFrameRef.current = window.requestAnimationFrame(() => {
-          void detectFaceInRealtime();
-        });
-        return;
-      }
-
-      try {
-        const detection = await faceapi.detectSingleFace(currentVideo, DETECTOR_OPTIONS);
-
-        if (!cancelled && overlayCanvasRef.current) {
-          drawGuide(
-            overlayCanvasRef.current,
-            detection,
-            currentVideo.videoWidth,
-            currentVideo.videoHeight,
-          );
-        }
-      } catch {
-        if (!cancelled && overlayCanvasRef.current) {
-          drawGuide(overlayCanvasRef.current);
-        }
-      }
-
-      detectionFrameRef.current = window.requestAnimationFrame(() => {
-        void detectFaceInRealtime();
-      });
-    };
-
-    detectionFrameRef.current = window.requestAnimationFrame(() => {
-      void detectFaceInRealtime();
-    });
-
-    return () => {
-      cancelled = true;
-      if (detectionFrameRef.current !== null) {
-        window.cancelAnimationFrame(detectionFrameRef.current);
-        detectionFrameRef.current = null;
-      }
-    };
-  }, [fatalError, isAnalyzing, isBooting, isReady, status]);
+  }, [detection]);
 
   useEffect(() => {
     let isMounted = true;
 
-    const startCameraFlow = async () => {
+    const init = async () => {
       try {
-        setIsBooting(true);
-        setFatalError("");
-        setFeedbackMessage("Carregando reconhecimento facial...");
-
-        await Promise.all([
-          faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_PATH),
-          faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_PATH),
-          faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_PATH),
-        ]);
-
-        if (!isMounted) return;
-
-        setFeedbackMessage("Solicitando acesso a camera...");
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "user",
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-          },
-          audio: false,
-        });
-
-        if (!isMounted) {
-          stream.getTracks().forEach((track) => track.stop());
-          return;
-        }
-
-        streamRef.current = stream;
-
-        const video = videoRef.current;
-        if (!video) throw new Error("Camera indisponivel.");
-
-        video.srcObject = stream;
-        await video.play();
-
-        if (!isMounted) return;
-
-        syncOverlay();
-        setFeedbackMessage("");
-        setIsReady(true);
+        setFeedbackMessage("Inicializando sistema...");
+        // models are loaded by the hook
       } catch (error) {
         if (!isMounted) return;
-
-        const message =
-          error instanceof Error && error.message
-            ? error.message
-            : "Nao foi possivel inicializar a camera para o reconhecimento facial.";
-
-        setFatalError(message);
-        setShowPasswordFallback(true);
-        setIsReady(false);
-      } finally {
-        if (isMounted) {
-          setIsBooting(false);
-        }
+        setFatalError("Não foi possível inicializar o sistema de reconhecimento.");
       }
     };
 
-    void startCameraFlow();
+    void init();
 
     const handleResize = () => syncOverlay();
     window.addEventListener("resize", handleResize);
@@ -234,22 +147,35 @@ export const PointRegisterFaceId = () => {
     return () => {
       isMounted = false;
       window.removeEventListener("resize", handleResize);
-      if (detectionFrameRef.current !== null) {
-        window.cancelAnimationFrame(detectionFrameRef.current);
-        detectionFrameRef.current = null;
-      }
-      streamRef.current?.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
+      stopCamera();
       reset();
     };
   }, []);
 
   useEffect(() => {
+    if (isLoaded && !isCameraReady && !fatalError && !hookError) {
+      setFeedbackMessage("Solicitando acesso à câmera...");
+      startCamera()
+        .then(() => setFeedbackMessage(""))
+        .catch((err) => {
+          setFatalError(err.message || "Falha ao iniciar câmera.");
+          setShowPasswordFallback(true);
+        });
+    }
+  }, [isLoaded, isCameraReady, fatalError, hookError, startCamera]);
+
+  useEffect(() => {
+    if (hookError) {
+      setFatalError(hookError);
+      setShowPasswordFallback(true);
+    }
+  }, [hookError]);
+
+  useEffect(() => {
     if (status === "success") {
       setFeedbackMessage(
-        `Ponto registrado com sucesso${systemLocalDate ? ` em ${formatPtBrDateTime(systemLocalDate)}` : ""}.`,
+        `Ponto registrado com sucesso${systemLocalDate ? ` em ${formatPtBrDateTime(systemLocalDate)}` : ""}.`
       );
-      setIsReady(false);
 
       const timer = window.setTimeout(() => {
         navigate("/");
@@ -261,22 +187,19 @@ export const PointRegisterFaceId = () => {
     if (status === "error" || status === "maxPunch") {
       setFeedbackMessage(errorMessage);
       setShowPasswordFallback(true);
-      setIsReady(Boolean(videoRef.current) && !fatalError);
     }
 
     return undefined;
-  }, [errorMessage, fatalError, navigate, status, systemLocalDate]);
+  }, [errorMessage, navigate, status, systemLocalDate]);
 
   const handleCameraTap = async () => {
-    if (!isReady || isBooting || isAnalyzing || status === "loading" || fatalError) return;
+    if (!isCameraReady || !isLoaded || isAnalyzing || status === "loading" || fatalError || status === "success") return;
 
     const video = videoRef.current;
-    const processingCanvas = processingCanvasRef.current;
     const overlayCanvas = overlayCanvasRef.current;
 
-    if (!video || !processingCanvas || !overlayCanvas || !video.videoWidth || !video.videoHeight) {
-      setFatalError("A camera ainda nao esta pronta para capturar o rosto.");
-      setShowPasswordFallback(true);
+    if (!video || !overlayCanvas || !video.videoWidth || !video.videoHeight) {
+      setFeedbackMessage("A câmera ainda não está pronta.");
       return;
     }
 
@@ -285,38 +208,17 @@ export const PointRegisterFaceId = () => {
       setFeedbackMessage("");
       reset();
 
-      processingCanvas.width = video.videoWidth;
-      processingCanvas.height = video.videoHeight;
-      const context = processingCanvas.getContext("2d");
+      const result = await captureDescriptor();
 
-      if (!context) {
-        throw new Error("Nao foi possivel preparar a captura da camera.");
-      }
-
-      context.drawImage(video, 0, 0, processingCanvas.width, processingCanvas.height);
-
-      const detections = await faceapi
-        .detectAllFaces(processingCanvas, DETECTOR_OPTIONS)
-        .withFaceLandmarks(true)
-        .withFaceDescriptors();
-
-      if (!detections.length) {
-        setFeedbackMessage("Nenhum rosto foi identificado. Tente novamente olhando para a camera.");
-        drawGuide(overlayCanvas);
+      if (!result) {
+        setFeedbackMessage("Nenhum rosto foi identificado. Tente novamente olhando para a câmera.");
         return;
       }
 
-      if (detections.length > 1) {
-        setFeedbackMessage("Mais de um rosto foi encontrado. Deixe apenas uma pessoa na camera.");
-        drawGuide(overlayCanvas);
-        return;
-      }
-
-      drawGuide(overlayCanvas, detections[0].detection, video.videoWidth, video.videoHeight);
-      await registerPointWithDescriptor(Array.from(detections[0].descriptor));
+      await registerPointWithDescriptor(Array.from(result.descriptor));
     } catch (error) {
       const message =
-        error instanceof Error && error.message ? error.message : "Nao foi possivel processar o rosto capturado.";
+        error instanceof Error && error.message ? error.message : "Não foi possível processar o rosto capturado.";
       setFeedbackMessage(message);
       setShowPasswordFallback(true);
     } finally {
@@ -324,16 +226,18 @@ export const PointRegisterFaceId = () => {
     }
   };
 
-  const isBusy = isBooting || isAnalyzing || status === "loading";
+  const isBusy = !isLoaded || !isCameraReady || isAnalyzing || status === "loading";
   const overlayTitle = status === "success" ? "Ponto confirmado" : isBusy ? "Processando" : "";
   const overlayText =
     status === "success"
       ? feedbackMessage
-      : isBooting
-        ? feedbackMessage || "Preparando camera..."
-        : isAnalyzing || status === "loading"
-          ? "Capturando e enviando a referencia facial..."
-          : "";
+      : !isLoaded
+      ? "Carregando modelos..."
+      : !isCameraReady
+      ? feedbackMessage || "Preparando câmera..."
+      : isAnalyzing || status === "loading"
+      ? "Capturando e enviando a referência facial..."
+      : "";
 
   return (
     <Box
@@ -360,7 +264,7 @@ export const PointRegisterFaceId = () => {
           variant="contained"
           color="secondary"
           startIcon={<ArrowBackRoundedIcon />}
-          disabled={isBusy}
+          disabled={status === "loading" || isAnalyzing}
         >
           Voltar
         </Button>
@@ -410,7 +314,7 @@ export const PointRegisterFaceId = () => {
           borderLeft: "4px solid rgba(255, 255, 255, 0.18)",
           borderRight: "4px solid rgba(255, 255, 255, 0.18)",
           outline: "none",
-          cursor: isReady && !isBusy ? "pointer" : "default",
+          cursor: isCameraReady && !isBusy && status !== "success" ? "pointer" : "default",
         }}
       >
         <video
@@ -428,17 +332,15 @@ export const PointRegisterFaceId = () => {
           }}
         />
 
-    
-          <canvas
-            ref={overlayCanvasRef}
-            style={{
-              position: "absolute",
-              display: isReady ? "block" : "none",
-              height: "100%",
-              pointerEvents: "none",
-            }}
-          />
-       
+        <canvas
+          ref={overlayCanvasRef}
+          style={{
+            position: "absolute",
+            display: isCameraReady ? "block" : "none",
+            height: "100%",
+            pointerEvents: "none",
+          }}
+        />
 
         <canvas ref={processingCanvasRef} style={{ display: "none" }} />
 
@@ -457,14 +359,13 @@ export const PointRegisterFaceId = () => {
               Registrar ponto com Face ID
             </Typography>
             <Typography variant="body1" sx={{ color: "rgba(255,255,255,0.9)", maxWidth: 720 }}>
-              Pressione em qualquer lugar da camera para registrar o ponto.
+              Pressione em qualquer lugar da câmera para registrar o ponto.
             </Typography>
           </Stack>
         </Box>
 
-        {feedbackMessage && status !== "success" && !isBusy ? (
+        {(feedbackMessage || fatalError) && status !== "success" && !isAnalyzing && status !== "loading" ? (
           <Alert
-          
             severity={fatalError ? "error" : "warning"}
             sx={{
               position: "absolute",
@@ -476,22 +377,6 @@ export const PointRegisterFaceId = () => {
             }}
           >
             {fatalError || feedbackMessage}
-          </Alert>
-        ) : null}
-
-        {fatalError && !feedbackMessage ? (
-          <Alert
-            severity="error"
-            sx={{
-              position: "absolute",
-              left: "50%",
-              top: 12,
-              transform: "translateX(-50%)",
-              width: "min(640px, calc(100% - 32px))",
-              zIndex: 3,
-            }}
-          >
-            {fatalError}
           </Alert>
         ) : null}
 

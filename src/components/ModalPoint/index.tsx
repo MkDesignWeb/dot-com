@@ -20,26 +20,15 @@ type ModalPointProps = {
   user?: User;
 };
 
-const formatPtBrDateTime = (value: string) => {
-  if (!value) return "";
-
-  const parsedDate = new Date(value);
-  if (Number.isNaN(parsedDate.getTime())) return value;
-
-  return parsedDate.toLocaleString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  });
-};
+/**
+ * Tempo que a confirmacao (ou o aviso de limite) fica na tela antes de fechar.
+ * Subiu de 2s: ha o rotulo da marcacao para ler.
+ */
+const CONFIRMATION_MS = 6000;
 
 export const ModalPoint = ({ modalOpen, setModalOpen, user }: ModalPointProps) => {
   const navigate = useNavigate();
-  const { status, errorMessage, password, setPassword, systemLocalDate, registerPoint, reset } = usePointRegistration();
+  const { status, errorMessage, password, setPassword, confirmation, registerPoint, reset } = usePointRegistration();
 
   const handleClose = useCallback(() => {
     setModalOpen(false);
@@ -49,11 +38,13 @@ export const ModalPoint = ({ modalOpen, setModalOpen, user }: ModalPointProps) =
   useEffect(() => {
     if (!modalOpen) return;
 
-    if (status === "success" || status === "maxPunch") {
+    // "inactive" fecha sozinho como os outros estados terminais: insistir na
+    // senha nao muda o resultado, a guarda do servidor e a mesma.
+    if (status === "success" || status === "maxPunch" || status === "inactive") {
       const timer = setTimeout(() => {
         handleClose();
         navigate("/");
-      }, 2000);
+      }, CONFIRMATION_MS);
       return () => clearTimeout(timer);
     }
 
@@ -92,11 +83,13 @@ export const ModalPoint = ({ modalOpen, setModalOpen, user }: ModalPointProps) =
 
           {status === "success" && (
             <Alert severity="success" variant="filled">
-              Ponto registrado com sucesso {systemLocalDate ? `em ${formatPtBrDateTime(systemLocalDate)}` : ""}.
+              {confirmation?.message}
             </Alert>
           )}
 
-          {status === "maxPunch" && <Alert severity="warning">{errorMessage}</Alert>}
+          {(status === "maxPunch" || status === "inactive") && (
+            <Alert severity="warning">{errorMessage}</Alert>
+          )}
           {status === "error" && <Alert severity="error">{errorMessage}</Alert>}
         </Stack>
       </DialogContent>
@@ -107,7 +100,12 @@ export const ModalPoint = ({ modalOpen, setModalOpen, user }: ModalPointProps) =
         <LoadingButton
           variant="contained"
           loading={status === "loading"}
-          disabled={!password.trim() || status === "success" || status === "maxPunch"}
+          disabled={
+            !password.trim() ||
+            status === "success" ||
+            status === "maxPunch" ||
+            status === "inactive"
+          }
           onClick={() => void registerPoint(user?.id)}
         >
           Registrar ponto

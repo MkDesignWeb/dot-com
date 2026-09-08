@@ -11,27 +11,19 @@ import {
   Typography,
 } from "@mui/material";
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
+import SyncProblemRoundedIcon from "@mui/icons-material/SyncProblemRounded";
+import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import { Link as RouterLink } from "react-router-dom";
 import { useServerTime } from "../../hooks/useServerTime";
+import { formatBusinessClock, formatBusinessLongDate } from "../../utils/timezone";
+import { describeTimeSource, formatUtcClock } from "../../utils/timeSource";
 
-const formatDate = (date: Date) =>
-  date.toLocaleDateString("pt-BR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-
-const formatClock = (date: Date) =>
-  date.toLocaleTimeString("pt-BR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
 
 export const TimePage = () => {
-  const { status, time, retry } = useServerTime();
+  const { status, isOutOfSync, time, timeSource, retry } = useServerTime();
+
+  const sourceLabel = describeTimeSource(timeSource, { isOutOfSync });
 
   return (
     <Box
@@ -66,7 +58,10 @@ export const TimePage = () => {
 
             {status === "error" ? (
               <Stack spacing={2} sx={{ width: "100%", maxWidth: 540 }}>
-                <Alert severity="error">Erro ao sincronizar o horario com o servidor.</Alert>
+                <Alert severity="error">
+                  Nao foi possivel sincronizar o horario com o servidor. Verifique a conexao e o
+                  endereco em Configuracoes.
+                </Alert>
                 <Button variant="contained" onClick={() => void retry()}>
                   Tentar novamente
                 </Button>
@@ -76,6 +71,26 @@ export const TimePage = () => {
             {status === "success" ? (
               <>
                 <Stack spacing={1} alignItems="center">
+                  {/* Procedencia ACIMA do relogio: quem olha para a hora precisa
+                      saber, no mesmo relance, se aquele numero e o oficial. */}
+                  <Tooltip title={sourceLabel.detail}>
+                    <Stack direction="row" spacing={0.75} alignItems="center">
+                      {sourceLabel.warning ? (
+                        <SyncProblemRoundedIcon fontSize="small" color="warning" />
+                      ) : (
+                        <VerifiedRoundedIcon fontSize="small" color="success" />
+                      )}
+                      <Typography
+                        component="span"
+                        variant="caption"
+                        color={sourceLabel.warning ? "warning.main" : "text.secondary"}
+                        sx={{ letterSpacing: 0.4, textTransform: "uppercase", fontWeight: 600 }}
+                      >
+                        {sourceLabel.text}
+                      </Typography>
+                    </Stack>
+                  </Tooltip>
+
                   <Typography
                     variant="h2"
                     sx={{
@@ -85,24 +100,48 @@ export const TimePage = () => {
                       fontSize: { xs: "2.7rem", sm: "3.6rem", md: "5rem" },
                     }}
                   >
-                    {formatClock(time)}
+                    {formatBusinessClock(time)}
                   </Typography>
                   <Typography variant="h6" color="text.secondary" sx={{ textTransform: "capitalize" }}>
-                    {formatDate(time)}
+                    {formatBusinessLongDate(time)}
                   </Typography>
+
+                  {/* A mesma hora na referencia mundial. Serve de conferencia
+                      quando alguem contesta o horario: UTC nao tem horario de
+                      verao nem depende do fuso configurado na maquina. */}
+                  <Typography
+                    component="span"
+                    variant="caption"
+                    color="text.disabled"
+                    sx={{ fontVariantNumeric: "tabular-nums" }}
+                  >
+                    {formatUtcClock(time)}
+                  </Typography>
+
+                  {/* Perder a sincronia nao apaga o relogio: ele continua contando
+                      com o ultimo desvio medido enquanto tenta reconectar. O aviso
+                      fica no rotulo acima do relogio — repeti-lo aqui embaixo dizia
+                      a mesma coisa duas vezes. */}
                 </Stack>
 
-                <Button
-                  component={RouterLink}
-                  to="/pointRegister"
-                  variant="contained"
-                  color="primary"
-                  size="large"
-                  startIcon={<AccessTimeRoundedIcon />}
-                  sx={{ minWidth: 220, minHeight: 54 }}
-                >
-                  Registrar ponto
-                </Button>
+                <Stack spacing={1} alignItems="center">
+                  <Button
+                    component={RouterLink}
+                    to="/pointRegister"
+                    variant="contained"
+                    color="primary"
+                    size="large"
+                    startIcon={<AccessTimeRoundedIcon />}
+                    sx={{ minWidth: 220, minHeight: 54 }}
+                  >
+                    Registrar ponto
+                  </Button>
+                  {isOutOfSync ? (
+                    <Typography variant="body2" color="text.secondary">
+                      Sem o servidor a batida nao sera registrada.
+                    </Typography>
+                  ) : null}
+                </Stack>
               </>
             ) : null}
           </Stack>

@@ -3,6 +3,9 @@ import { existsSync } from "fs";
 import store from "./store.js";
 import path from "path";
 
+// Deve casar com server.port do vite.config.ts. O painel (dot-com-adm-main) fica na 5173.
+const DEV_SERVER_URL = "http://localhost:5174";
+
 ipcMain.handle("config:get", () => {
   return store.get("server") || {};
 });
@@ -75,7 +78,7 @@ function createWindow() {
   const indexPath = path.join(app.getAppPath(), "dist-react/index.html");
 
   if (isDev) {
-    void mainWindow.loadURL("http://localhost:5173");
+    void mainWindow.loadURL(DEV_SERVER_URL);
   } else {
     void mainWindow.loadFile(indexPath);
   }

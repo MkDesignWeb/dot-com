@@ -20,6 +20,9 @@ export const UserCard = ({ user, onSelect }: UserCardProps) => {
               </Typography>
             </Stack>
             <Typography variant="body2" color="text.secondary">
+              {/* Sem a matricula, dois homonimos seriam dois cartoes identicos
+                  e alguem bateria o ponto da pessoa errada. */}
+              {user.registration ? `Matrícula ${user.registration} · ` : ""}
               Empresa: {user.companny}
             </Typography>
           </Stack>

@@ -7,8 +7,15 @@ class PunchService {
     return response.data;
   }
 
-  async setFaceReferencePunch(descriptor: number[]): Promise<PunchResponse> {
-    const response = await api.post<PunchResponse>("/punch/face-reference", { descriptor });
+  /**
+   * `photo` e a evidencia da batida: fica guardada no servidor para auditoria.
+   * Opcional de proposito — se a captura falhar, a batida ainda acontece.
+   */
+  async setFaceReferencePunch(descriptor: number[], photo?: string): Promise<PunchResponse> {
+    const response = await api.post<PunchResponse>("/punch/face-reference", {
+      descriptor,
+      ...(photo ? { photo } : {}),
+    });
     return response.data;
   }
 }

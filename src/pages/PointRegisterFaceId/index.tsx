@@ -1,5 +1,5 @@
 import "@tensorflow/tfjs";
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as faceapi from "@vladmandic/face-api";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import PasswordRoundedIcon from "@mui/icons-material/PasswordRounded";
@@ -17,22 +17,22 @@ import { useFaceApiDetection } from "../../hooks/useFaceApiDetection";
 
 const MODEL_PATH = "models";
 
-const formatPtBrDateTime = (value: string) => {
-  if (!value) return "";
+/**
+ * Tempo que a confirmacao fica na tela antes de voltar sozinha.
+ * Subiu de 3s: agora ha o rotulo da marcacao para ler, e quem esta na fila
+ * precisa do terminal livre sem depender de alguem tocar.
+ */
+const CONFIRMATION_MS = 6000;
 
-  const parsedDate = new Date(value);
-  if (Number.isNaN(parsedDate.getTime())) return value;
-
-  return parsedDate.toLocaleString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  });
-};
+/**
+ * Tamanho da foto arquivada com a batida.
+ *
+ * 640px de largura mantem o rosto reconhecivel numa auditoria e deixa o arquivo
+ * em ~40KB. O quadro em tamanho natural continua sendo usado para o
+ * reconhecimento — so a evidencia e reduzida.
+ */
+const PHOTO_MAX_WIDTH = 640;
+const PHOTO_QUALITY = 0.8;
 
 const drawGuide = (
   canvas: HTMLCanvasElement,
@@ -68,12 +68,15 @@ export const PointRegisterFaceId = () => {
   const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const processingCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  /** Fora da tela: guarda o quadro congelado em tamanho natural, para a leitura do rosto. */
+  const captureCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  /** Fora da tela: versao reduzida, exibida e arquivada como evidencia. */
+  const photoCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const {
     status,
     errorMessage,
-    systemLocalDate,
+    confirmation,
     employeeName,
     registerPointWithDescriptor,
     reset,
@@ -88,25 +91,24 @@ export const PointRegisterFaceId = () => {
     []
   );
 
-  const {
-    isLoaded,
-    isCameraReady,
-    detection,
-    error: hookError,
-    startCamera,
-    stopCamera,
-    captureDescriptor,
-  } = useFaceApiDetection(videoRef, {
-    modelPath: MODEL_PATH,
-    detectorOptions,
-  });
-
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [fatalError, setFatalError] = useState("");
   const [showPasswordFallback, setShowPasswordFallback] = useState(false);
+  /** Foto congelada no toque. Enquanto existir, a tela mostra ela no lugar do video. */
+  const [photo, setPhoto] = useState<string | null>(null);
+  /** Muda a cada captura para reiniciar a animacao do flash. */
+  const [flashKey, setFlashKey] = useState(0);
 
-  const syncOverlay = () => {
+  /**
+   * Ultimo rosto lido. Fica em ref, e nao em estado: serve so para redesenhar o
+   * canvas — inclusive no "resize", que precisa do valor atual sem depender de
+   * um novo render.
+   */
+  const lastDetectionRef = useRef<faceapi.FaceDetection | null>(null);
+
+  /** Desenha a guia e o retangulo direto no canvas, sem passar pelo React. */
+  const syncOverlay = useCallback((detection: faceapi.FaceDetection | null) => {
     const video = videoRef.current;
     const overlay = overlayCanvasRef.current;
     if (!video || !overlay) return;
@@ -118,38 +120,44 @@ export const PointRegisterFaceId = () => {
     overlay.width = width;
     overlay.height = height;
     drawGuide(overlay, detection, video.videoWidth, video.videoHeight);
-  };
+  }, []);
+
+  const handleDetection = useCallback(
+    (detection: faceapi.FaceDetection | null) => {
+      lastDetectionRef.current = detection;
+      syncOverlay(detection);
+    },
+    [syncOverlay]
+  );
+
+  const {
+    isLoaded,
+    isCameraReady,
+    error: hookError,
+    startCamera,
+    stopCamera,
+    captureDescriptor,
+  } = useFaceApiDetection(videoRef, {
+    modelPath: MODEL_PATH,
+    detectorOptions,
+    onDetection: handleDetection,
+    // Enquanto a batida esta sendo enviada ou a confirmacao esta na tela, o
+    // retangulo nao serve para nada — nao ha por que rodar o modelo.
+    enabled: !isAnalyzing && status !== "loading" && status !== "success",
+  });
 
   useEffect(() => {
-    if (detection !== undefined) {
-      syncOverlay();
-    }
-  }, [detection]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const init = async () => {
-      try {
-        setFeedbackMessage("Inicializando sistema...");
-        // models are loaded by the hook
-      } catch (error) {
-        if (!isMounted) return;
-        setFatalError("Não foi possível inicializar o sistema de reconhecimento.");
-      }
-    };
-
-    void init();
-
-    const handleResize = () => syncOverlay();
+    const handleResize = () => syncOverlay(lastDetectionRef.current);
     window.addEventListener("resize", handleResize);
 
     return () => {
-      isMounted = false;
       window.removeEventListener("resize", handleResize);
       stopCamera();
       reset();
     };
+    // Montagem e desmontagem apenas: stopCamera e reset aqui desligariam a
+    // camera a cada render em que mudassem de identidade.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -173,15 +181,22 @@ export const PointRegisterFaceId = () => {
 
   useEffect(() => {
     if (status === "success") {
-      setFeedbackMessage(
-        `Ponto registrado com sucesso${systemLocalDate ? ` em ${formatPtBrDateTime(systemLocalDate)}` : ""}.`
-      );
+      setFeedbackMessage(confirmation?.detail ?? "");
 
       const timer = window.setTimeout(() => {
         navigate("/");
-      }, 3000);
+      }, CONFIRMATION_MS);
 
       return () => window.clearTimeout(timer);
+    }
+
+    if (status === "inactive") {
+      // Sem fallback de senha: o `set` por senha aplica a mesma guarda, entao
+      // oferecer a alternativa so mandaria a pessoa numa tentativa que ja se
+      // sabe que falha. O caminho aqui e procurar o supervisor.
+      setFeedbackMessage(errorMessage);
+      setShowPasswordFallback(false);
+      return undefined;
     }
 
     if (status === "error" || status === "maxPunch") {
@@ -190,15 +205,52 @@ export const PointRegisterFaceId = () => {
     }
 
     return undefined;
-  }, [errorMessage, navigate, status, systemLocalDate]);
+  }, [confirmation, errorMessage, navigate, status]);
+
+  /**
+   * Congela o quadro atual da camera.
+   *
+   * Devolve duas coisas diferentes de proposito:
+   *
+   * - `canvas`: tamanho natural, usado para LER o rosto. Reduzir a entrada do
+   *   reconhecimento pioraria a precisao do match.
+   * - `dataUrl`: reduzido, usado para EXIBIR e para arquivar como evidencia.
+   *   Para reconhecer uma pessoa numa auditoria, 640px bastam — e o payload cai
+   *   de ~270KB para ~50KB em base64.
+   */
+  const freezeFrame = useCallback(() => {
+    const video = videoRef.current;
+    const canvas = captureCanvasRef.current;
+    const thumbnail = photoCanvasRef.current;
+    if (!video || !canvas || !thumbnail || !video.videoWidth || !video.videoHeight) return null;
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const context = canvas.getContext("2d");
+    if (!context) return null;
+
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const scale = Math.min(1, PHOTO_MAX_WIDTH / canvas.width);
+    thumbnail.width = Math.round(canvas.width * scale);
+    thumbnail.height = Math.round(canvas.height * scale);
+
+    const thumbnailContext = thumbnail.getContext("2d");
+    if (!thumbnailContext) return null;
+
+    // Quadro inteiro, sem recortar o rosto: o valor da evidencia esta no
+    // contexto — um celular na mao, outra pessoa junto, um rosto numa tela.
+    thumbnailContext.drawImage(video, 0, 0, thumbnail.width, thumbnail.height);
+
+    return { canvas, dataUrl: thumbnail.toDataURL("image/jpeg", PHOTO_QUALITY) };
+  }, []);
 
   const handleCameraTap = async () => {
     if (!isCameraReady || !isLoaded || isAnalyzing || status === "loading" || fatalError || status === "success") return;
 
-    const video = videoRef.current;
-    const overlayCanvas = overlayCanvasRef.current;
-
-    if (!video || !overlayCanvas || !video.videoWidth || !video.videoHeight) {
+    const frame = freezeFrame();
+    if (!frame) {
       setFeedbackMessage("A câmera ainda não está pronta.");
       return;
     }
@@ -208,15 +260,22 @@ export const PointRegisterFaceId = () => {
       setFeedbackMessage("");
       reset();
 
-      const result = await captureDescriptor();
+      // A foto entra na tela antes da leitura: o toque tem resposta imediata,
+      // sem esperar o modelo nem a rede.
+      setPhoto(frame.dataUrl);
+      setFlashKey((previous) => previous + 1);
+
+      const result = await captureDescriptor(frame.canvas);
 
       if (!result) {
+        setPhoto(null);
         setFeedbackMessage("Nenhum rosto foi identificado. Tente novamente olhando para a câmera.");
         return;
       }
 
-      await registerPointWithDescriptor(Array.from(result.descriptor));
+      await registerPointWithDescriptor(Array.from(result.descriptor), frame.dataUrl);
     } catch (error) {
+      setPhoto(null);
       const message =
         error instanceof Error && error.message ? error.message : "Não foi possível processar o rosto capturado.";
       setFeedbackMessage(message);
@@ -226,8 +285,24 @@ export const PointRegisterFaceId = () => {
     }
   };
 
-  const isBusy = !isLoaded || !isCameraReady || isAnalyzing || status === "loading";
-  const overlayTitle = status === "success" ? "Ponto confirmado" : isBusy ? "Processando" : "";
+  // A foto congelada some quando a tentativa falha: sem isto o funcionario
+  // ficaria olhando a propria imagem parada sem entender que pode tentar de novo.
+  useEffect(() => {
+    if (status === "error" || status === "maxPunch" || status === "inactive") {
+      setPhoto(null);
+    }
+  }, [status]);
+
+  const isCapturing = isAnalyzing || status === "loading";
+  const isBusy = !isLoaded || !isCameraReady || isCapturing;
+  const overlayTitle =
+    status === "success"
+      ? (confirmation?.title ?? "Ponto confirmado")
+      : isCapturing
+      ? "Registrando ponto"
+      : isBusy
+      ? "Processando"
+      : "";
   const overlayText =
     status === "success"
       ? feedbackMessage
@@ -235,8 +310,8 @@ export const PointRegisterFaceId = () => {
       ? "Carregando modelos..."
       : !isCameraReady
       ? feedbackMessage || "Preparando câmera..."
-      : isAnalyzing || status === "loading"
-      ? "Capturando e enviando a referência facial..."
+      : isCapturing
+      ? "Confirmando com o servidor..."
       : "";
 
   return (
@@ -303,6 +378,10 @@ export const PointRegisterFaceId = () => {
         }}
         sx={{
           position: "relative",
+          // Contexto de empilhamento proprio: os z-index de dentro (foto, flash,
+          // cartao) nao podem disputar com os botoes irmaos "Voltar" e
+          // "Registrar com senha", que ficam por cima da camera inteira.
+          isolation: "isolate",
           display: "flex",
           justifyContent: "center",
           height: "100%",
@@ -317,32 +396,76 @@ export const PointRegisterFaceId = () => {
           cursor: isCameraReady && !isBusy && status !== "success" ? "pointer" : "default",
         }}
       >
+        {/* O video segue montado e tocando por tras da foto: parar e religar a
+            camera a cada tentativa deixaria um atraso visivel no retorno. */}
         <video
           ref={videoRef}
           playsInline
           muted
           autoPlay
-          onLoadedMetadata={syncOverlay}
+          onLoadedMetadata={() => syncOverlay(lastDetectionRef.current)}
           style={{
             display: "block",
             height: "100%",
             maxHeight: "100%",
             objectFit: "cover",
+            visibility: photo ? "hidden" : "visible",
             filter: isBusy || status === "success" ? "brightness(0.7)" : "none",
           }}
         />
 
+        {photo ? (
+          <Box
+            component="img"
+            src={photo}
+            alt=""
+            sx={{
+              position: "absolute",
+              top: 0,
+              left: "50%",
+              transform: "translateX(-50%)",
+              height: "100%",
+              maxHeight: "100%",
+              objectFit: "cover",
+              filter: "brightness(0.7)",
+              zIndex: 1,
+            }}
+          />
+        ) : null}
+
+        {/* Clarao do disparo. A chave reinicia a animacao a cada captura. */}
+        {photo ? (
+          <Box
+            key={flashKey}
+            sx={{
+              position: "absolute",
+              inset: 0,
+              bgcolor: "#fff",
+              zIndex: 3,
+              pointerEvents: "none",
+              animation: "capture-flash 320ms ease-out forwards",
+              "@keyframes capture-flash": {
+                from: { opacity: 0.85 },
+                to: { opacity: 0 },
+              },
+            }}
+          />
+        ) : null}
+
         <canvas
           ref={overlayCanvasRef}
           style={{
+            // A guia acompanha o rosto ao vivo; sobre a foto congelada ela
+            // apontaria para uma posicao que nao existe mais.
             position: "absolute",
-            display: isCameraReady ? "block" : "none",
+            display: isCameraReady && !photo ? "block" : "none",
             height: "100%",
             pointerEvents: "none",
           }}
         />
 
-        <canvas ref={processingCanvasRef} style={{ display: "none" }} />
+        <canvas ref={captureCanvasRef} style={{ display: "none" }} />
+        <canvas ref={photoCanvasRef} style={{ display: "none" }} />
 
         <Box
           sx={{
@@ -352,14 +475,26 @@ export const PointRegisterFaceId = () => {
             p: { xs: 3, md: 4 },
             background: "linear-gradient(180deg, rgba(8,18,13,0) 0%, rgba(8,18,13,0.76) 55%, rgba(8,18,13,0.92) 100%)",
             pointerEvents: "none",
+            zIndex: 2,
           }}
         >
           <Stack spacing={1} alignItems="center" textAlign="center">
             <Typography variant="h4" sx={{ color: "#fff", fontWeight: 700 }}>
               Registrar ponto com Face ID
             </Typography>
-            <Typography variant="body1" sx={{ color: "rgba(255,255,255,0.9)", maxWidth: 720 }}>
-              Pressione em qualquer lugar da câmera para registrar o ponto.
+            {/* Com a foto congelada nao ha o que pressionar: a instrucao so
+                confundiria quem esta esperando a confirmacao. */}
+            {!photo ? (
+              <Typography variant="body1" sx={{ color: "rgba(255,255,255,0.9)", maxWidth: 720 }}>
+                Pressione em qualquer lugar da câmera para registrar o ponto.
+              </Typography>
+            ) : null}
+
+            {/* O aviso E o mecanismo: a foto arquivada so inibe o uso de imagem
+                de terceiro se quem bate souber que ela fica guardada. Alem
+                disso, ser transparente sobre a coleta e exigencia da LGPD. */}
+            <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.62)", maxWidth: 720 }}>
+              Sua foto é registrada junto com a marcação e fica disponível para conferência.
             </Typography>
           </Stack>
         </Box>
@@ -373,7 +508,7 @@ export const PointRegisterFaceId = () => {
               top: 12,
               transform: "translateX(-50%)",
               width: "min(640px, calc(100% - 32px))",
-              zIndex: 3,
+              zIndex: 5,
             }}
           >
             {fatalError || feedbackMessage}
@@ -388,7 +523,7 @@ export const PointRegisterFaceId = () => {
               display: "grid",
               placeItems: "center",
               bgcolor: "rgba(8, 18, 13, 0.45)",
-              zIndex: 2,
+              zIndex: 4,
             }}
           >
             <Stack

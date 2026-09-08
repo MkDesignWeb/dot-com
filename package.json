@@ -1,7 +1,7 @@
 {
   "name": "dot-com",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "main": "dist-electron/main.js",
   "build": {
@@ -40,13 +40,14 @@
   ],
   "scripts": {
     "build:electron": "tsc -p electron && tsc -p electron/tsconfig.preload.json",
-    "dev": "npm run build:electron && concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "dev": "npm run build:electron && concurrently \"vite\" \"wait-on http://localhost:5174 && electron .\"",
     "build": "npm run build-react && npm run build-electron && tsc -p electron/tsconfig.preload.json",
     "build-react": "vite build",
     "build-electron": "tsc -p electron/tsconfig.json",
     "lint": "eslint .",
     "preview": "vite preview",
-    "dist": "npm run build && electron-builder"
+    "dist": "npm run build && electron-builder",
+    "test": "tsx src/tests/timezone.check.ts && tsx src/tests/punchLabel.check.ts && tsx src/tests/detectionThrottle.check.ts && tsx src/tests/clockSync.check.ts && tsx src/tests/punchError.check.ts && tsx src/tests/timeSource.check.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

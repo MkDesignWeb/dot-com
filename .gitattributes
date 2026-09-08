@@ -1,2 +1,23 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Arquivos de texto ficam em LF no repositorio e tambem no disco.
+# O eol=lf sobrepoe o core.autocrlf=true do Git for Windows, que senao
+# converteria tudo para CRLF no checkout e sujaria os diffs.
+* text=auto eol=lf
+
+# Binarios: nunca tocar no conteudo.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.exe binary
+*.dll binary
+*.node binary
+*.db binary
+*.pdf binary
+
+# Pesos do face-api (sem extensao)
+*-shard1 binary
+*-shard2 binary

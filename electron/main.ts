@@ -1,6 +1,8 @@
 import { app, ipcMain, BrowserWindow, nativeImage } from "electron";
 import { existsSync } from "fs";
 import store from "./store.js";
+import { getDeviceIdentity } from "./device.js";
+import { applyUpdate } from "./updater.js";
 import path from "path";
 
 // Deve casar com server.port do vite.config.ts. O painel (dot-com-adm-main) fica na 5173.
@@ -14,7 +16,28 @@ ipcMain.handle("config:set", (_, data) => {
   store.set("server", data);
 });
 
+ipcMain.handle("device:identity", () => {
+  return getDeviceIdentity();
+});
+
 let mainWindow: BrowserWindow | null = null;
+
+/**
+ * Executa a ordem de atualizacao que o renderer recebeu no heartbeat.
+ *
+ * Mora no processo principal porque so ele pode gravar em disco e chamar um
+ * executavel. O renderer e quem conversa com o servidor; o progresso volta por
+ * evento, para ele incluir no proximo heartbeat.
+ */
+ipcMain.handle("update:apply", (_, payload) => {
+  const { order, fileUrl } = (payload ?? {}) as { order?: unknown; fileUrl?: string };
+  if (!fileUrl) return;
+
+  void applyUpdate(order, fileUrl, (progress) => {
+    mainWindow?.webContents.send("update:progress", progress);
+  });
+});
+
 
 ipcMain.handle("window-minimize", () => {
   mainWindow?.minimize();

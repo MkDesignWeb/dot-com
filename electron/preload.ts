@@ -10,6 +10,27 @@ contextBridge.exposeInMainWorld("config", {
   set: (data: ServerConfig) => ipcRenderer.invoke("config:set", data),
 });
 
+
+contextBridge.exposeInMainWorld("device", {
+  identity: () =>
+    ipcRenderer.invoke("device:identity") as Promise<{
+      deviceId: string;
+      app: "terminal";
+      version: string;
+      hostname: string | null;
+    }>,
+});
+
+
+contextBridge.exposeInMainWorld("updater", {
+  apply: (order: unknown, fileUrl: string) => ipcRenderer.invoke("update:apply", { order, fileUrl }),
+  onProgress: (callback: (progress: unknown) => void) => {
+    const listener = (_event: unknown, progress: unknown) => callback(progress);
+    ipcRenderer.on("update:progress", listener);
+    return () => ipcRenderer.removeListener("update:progress", listener);
+  },
+});
+
 contextBridge.exposeInMainWorld("api", {
   versao: "1.0.0",
   window: {

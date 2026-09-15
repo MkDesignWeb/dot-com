@@ -47,7 +47,7 @@
     "build-electron": "tsc -p electron/tsconfig.json",
     "lint": "eslint .",
     "preview": "vite preview",
-    "dist": "npm run build && electron-builder",
+    "dist": "npm run build && node scripts/build-installer.cjs",
     "test": "tsx src/tests/timezone.check.ts && tsx src/tests/punchLabel.check.ts && tsx src/tests/detectionThrottle.check.ts && tsx src/tests/clockSync.check.ts && tsx src/tests/punchError.check.ts && tsx src/tests/timeSource.check.ts && tsx src/tests/deviceHeartbeat.check.ts && tsx src/tests/updateVerify.check.ts && tsx src/tests/appBusy.check.ts"
   },
   "dependencies": {
